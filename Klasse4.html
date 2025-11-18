@@ -72,6 +72,13 @@
             transform: translateY(-1px);
             box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
         }
+
+        .btn-success:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
         
         .btn-danger {
             background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
@@ -230,6 +237,7 @@
                         Wochenplaner
                     </h1>
                     <p class="text-white/80 text-lg">Anwesenheitsverwaltung leicht gemacht</p>
+                    <p id="currentFileName" class="text-white/60 text-sm mt-2 italic">Keine Datei geladen</p>
                 </div>
                 <div class="flex items-center space-x-2 md:space-x-4 flex-wrap justify-center">
                     <button id="openFileBtn" class="btn-primary text-white px-4 py-3 rounded-xl font-semibold transition-all duration-300 hover-lift text-sm mt-2 lg:mt-0" title="Eine bestehende Planungsdatei (.json) öffnen oder eine neue erstellen">
@@ -237,6 +245,9 @@
                     </button>
                     <button id="manageDaysBtn" class="btn-secondary text-white px-4 py-3 rounded-xl font-semibold transition-all duration-300 hover-lift text-sm mt-2 lg:mt-0" title="Ferien, Feiertage und andere geschlossene Tage verwalten">
                         Sondertage
+                    </button>
+                    <button id="createBackupBtn" class="btn-success text-white px-4 py-3 rounded-xl font-semibold transition-all duration-300 hover-lift text-sm mt-2 lg:mt-0" title="Eine Sicherungskopie der aktuellen Planung erstellen" disabled>
+                        Backup erstellen
                     </button>
                     <button id="themeToggle" class="glass-effect p-3 rounded-xl hover:scale-110 transition-all duration-300 mt-2 lg:mt-0" title="Helles/Dunkles Design umschalten">
                         <svg class="w-6 h-6 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
@@ -435,6 +446,7 @@
                 
                 this.initializeTheme();
                 this.bindEvents();
+                this.setupDragAndDrop();
                 this.render();
                 this.updateQuickNav();
             }
@@ -492,18 +504,78 @@
                 const savedTheme = localStorage.getItem('weekPlanner_theme');
                 const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
                 const isDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
-                
+
                 document.documentElement.classList.toggle('dark', isDark);
+            }
+
+            setupDragAndDrop() {
+                const body = document.body;
+
+                body.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    body.style.opacity = '0.7';
+                });
+
+                body.addEventListener('dragleave', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    body.style.opacity = '1';
+                });
+
+                body.addEventListener('drop', async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    body.style.opacity = '1';
+
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        const file = files[0];
+                        if (file.name.endsWith('.json')) {
+                            try {
+                                const content = await file.text();
+                                this.loadDataFromString(content);
+                                this.updateFileName(file.name);
+                                alert(`Datei "${file.name}" erfolgreich geladen!\n\nHinweis: Änderungen werden NICHT automatisch in dieser Datei gespeichert. Nutze "Backup erstellen" um eine neue Datei zu speichern.`);
+                            } catch (error) {
+                                alert('Fehler beim Laden der Datei. Bitte stelle sicher, dass es eine gültige JSON-Datei ist.');
+                                console.error('Drag & Drop Fehler:', error);
+                            }
+                        } else {
+                            alert('Bitte nur .json Dateien verwenden.');
+                        }
+                    }
+                });
+            }
+
+            updateFileName(fileName = null) {
+                const fileNameDisplay = document.getElementById('currentFileName');
+                const backupBtn = document.getElementById('createBackupBtn');
+
+                if (fileName || this.fileHandle) {
+                    const displayName = fileName || this.fileHandle.name;
+                    fileNameDisplay.textContent = `📄 ${displayName}`;
+                    fileNameDisplay.classList.remove('text-white/60');
+                    fileNameDisplay.classList.add('text-green-300');
+                    backupBtn.disabled = false;
+                    backupBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                } else {
+                    fileNameDisplay.textContent = 'Keine Datei geladen';
+                    fileNameDisplay.classList.remove('text-green-300');
+                    fileNameDisplay.classList.add('text-white/60');
+                    backupBtn.disabled = true;
+                    backupBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
             }
 
             autosave() {
                 clearTimeout(this.saveTimeout);
-                if (!this.fileHandle) return; 
+                if (!this.fileHandle) return;
                 this.saveTimeout = setTimeout(async () => {
                     await this.saveDataToFile();
                 }, 1500);
             }
-            
+
             async saveDataToFile() {
                 if (!this.fileHandle) return;
 
@@ -520,6 +592,7 @@
                     this.showSaveIndicator();
                 } catch (err) {
                     console.error("Fehler beim Speichern der Datei:", err);
+                    alert(`Fehler beim Speichern!\n\n${err.message}\n\nBitte erstelle ein Backup um deine Daten zu sichern.`);
                 }
             }
 
@@ -544,11 +617,12 @@
                     const file = await this.fileHandle.getFile();
                     const content = await file.text();
                     this.loadDataFromString(content);
+                    this.updateFileName();
                 } catch (err) {
                     console.info("Datei-Öffnen vom Benutzer abgebrochen.", err);
                 }
             }
-            
+
             async createNewFile() {
                 try {
                     this.fileHandle = await window.showSaveFilePicker({
@@ -562,9 +636,44 @@
                     this.specialDays = [];
                     this.render();
                     this.updateQuickNav();
+                    this.updateFileName();
                     await this.saveDataToFile();
                 } catch(err) {
                     console.info("Datei-Erstellen vom Benutzer abgebrochen.", err);
+                }
+            }
+
+            async createBackup() {
+                if (!this.data) {
+                    alert('Keine Daten zum Sichern vorhanden.');
+                    return;
+                }
+
+                const exportObject = {
+                    plannerData: this.data,
+                    specialDays: this.specialDays
+                };
+                const dataStr = JSON.stringify(exportObject, null, 2);
+
+                try {
+                    const backupHandle = await window.showSaveFilePicker({
+                        suggestedName: `backup_wochenplaner_${this.formatDate(new Date())}.json`,
+                        types: [{
+                            description: 'Wochenplaner JSON-Datei',
+                            accept: { 'application/json': ['.json'] },
+                        }],
+                    });
+
+                    const writable = await backupHandle.createWritable();
+                    await writable.write(dataStr);
+                    await writable.close();
+
+                    alert('Backup erfolgreich erstellt!');
+                } catch (err) {
+                    if (err.name !== 'AbortError') {
+                        console.error("Fehler beim Erstellen des Backups:", err);
+                        alert(`Fehler beim Erstellen des Backups:\n\n${err.message}`);
+                    }
                 }
             }
 
@@ -615,6 +724,7 @@
                     }
                 });
                 document.getElementById('exportExcelBtn').addEventListener('click', () => this.exportToExcel());
+                document.getElementById('createBackupBtn').addEventListener('click', () => this.createBackup());
 
                 document.getElementById('manageDaysBtn').addEventListener('click', () => this.showSpecialDaysModal());
                 document.getElementById('closeModal').addEventListener('click', () => this.hideSpecialDaysModal());
