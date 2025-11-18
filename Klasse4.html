@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wochenplaner - Anwesenheitsverwaltung</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .dark .gradient-bg {
+            background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+        }
+        
+        .glass-effect {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .dark .glass-effect {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .hover-lift {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .hover-lift:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #a0aec0 0%, #718096 100%);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(113, 128, 150, 0.4);
+        }
+        
+        .btn-secondary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(113, 128, 150, 0.6);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6);
+        }
+        
+        .animate-fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+        
+        .animate-slide-up {
+            animation: slideUp 0.4s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .checkbox-custom {
+            appearance: none;
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #d1d5db;
+            border-radius: 6px;
+            width: 20px;
+            height: 20px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .checkbox-custom:checked {
+            background: linear-gradient(135deg, #10b981, #059669);
+            border-color: #10b981;
+        }
+        
+        .checkbox-custom:checked::after {
+            content: '✓';
+            position: absolute;
+            top: -1px;
+            left: 3px;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .checkbox-custom:disabled {
+            background-color: rgba(209, 213, 219, 0.4);
+            border-color: rgba(156, 163, 175, 0.5);
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .dark .checkbox-custom:disabled {
+             background-color: rgba(75, 85, 99, 0.4);
+             border-color: rgba(107, 114, 128, 0.5);
+        }
+        
+        .dark .checkbox-custom {
+            background: rgba(75, 85, 99, 0.9);
+            border-color: #6b7280;
+        }
+        
+        .input-modern {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid transparent;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        
+        .input-modern:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.2);
+            background: rgba(255, 255, 255, 0.95);
+        }
+        
+        .dark .input-modern {
+            background: rgba(55, 65, 81, 0.9);
+            color: #f9fafb;
+        }
+        
+        .dark .input-modern:focus {
+            background: rgba(55, 65, 81, 0.95);
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .table-row {
+            transition: all 0.3s ease;
+        }
+        
+        .table-row:hover {
+            background: rgba(102, 126, 234, 0.05) !important;
+            transform: scale(1.01);
+        }
+        
+        .dark .table-row:hover {
+            background: rgba(102, 126, 234, 0.1) !important;
+        }
+        
+        .floating-action {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 40;
+        }
+        
+        .pulse-ring {
+            animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        }
+        
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(0.33);
+            }
+            40%, 50% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 0;
+                transform: scale(1.2);
+            }
+        }
+        
+        #autosaveIndicator {
+            position: fixed;
+            top: 1rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(-50px);
+            padding: 8px 16px;
+            border-radius: 12px;
+            color: white;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+            pointer-events: none;
+            background-color: #059669;
+        }
+    </style>
+</head>
+<body class="min-h-screen gradient-bg transition-all duration-500 text-white">
+    <div class="container mx-auto p-6">
+        <div class="glass-effect rounded-3xl p-8 mb-8 hover-lift animate-fade-in">
+            <div class="flex flex-col lg:flex-row justify-between items-center space-y-4 lg:space-y-0">
+                <div class="text-center lg:text-left">
+                    <h1 class="text-4xl lg:text-5xl font-bold text-white mb-2">
+                        Wochenplaner
+                    </h1>
+                    <p class="text-white/80 text-lg">Anwesenheitsverwaltung leicht gemacht</p>
+                </div>
+                <div class="flex items-center space-x-2 md:space-x-4 flex-wrap justify-center">
+                    <button id="openFileBtn" class="btn-primary text-white px-4 py-3 rounded-xl font-semibold transition-all duration-300 hover-lift text-sm mt-2 lg:mt-0" title="Eine bestehende Planungsdatei (.json) öffnen oder eine neue erstellen">
+                        Planung öffnen / Neue erstellen
+                    </button>
+                    <button id="manageDaysBtn" class="btn-secondary text-white px-4 py-3 rounded-xl font-semibold transition-all duration-300 hover-lift text-sm mt-2 lg:mt-0" title="Ferien, Feiertage und andere geschlossene Tage verwalten">
+                        Sondertage
+                    </button>
+                    <button id="themeToggle" class="glass-effect p-3 rounded-xl hover:scale-110 transition-all duration-300 mt-2 lg:mt-0" title="Helles/Dunkles Design umschalten">
+                        <svg class="w-6 h-6 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                        <svg class="w-6 h-6 hidden dark:inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-effect rounded-3xl p-6 mb-8 hover-lift animate-slide-up">
+            <div class="flex flex-col lg:flex-row justify-center items-center space-y-4 lg:space-y-0 lg:space-x-8">
+                <button id="prevWeek" class="glass-effect p-3 rounded-full hover:scale-110 transition-all duration-300 group" title="Vorherige Woche">
+                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                </button>
+                
+                <div class="flex flex-col lg:flex-row items-center space-y-4 lg:space-y-0 lg:space-x-6">
+                    <div class="text-center">
+                        <span id="weekDisplay" class="text-2xl font-bold text-white block"></span>
+                        <span class="text-white/70 text-sm">Aktuelle Woche</span>
+                    </div>
+                    
+                    <div class="flex flex-col items-center">
+                         <label for="classSelect" class="text-white/70 text-xs mb-1">Klasse</label>
+                        <select id="classSelect" class="input-modern rounded-xl px-4 py-2 font-medium mb-2 text-gray-800 dark:text-white w-32">
+                            <option value="class1">Klasse 1</option>
+                            <option value="class2">Klasse 2</option>
+                            <option value="class3">Klasse 3</option>
+                            <option value="class4">Klasse 4</option>
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col items-center">
+                        <label for="quickNav" class="text-white/70 text-xs mb-1">Schnellnavigation</label>
+                        <select id="quickNav" class="input-modern rounded-xl px-4 py-2 font-medium mb-2 text-gray-800 dark:text-white" title="Direkt zu einem gespeicherten Sondertag springen">
+                            <option value="">Springe zu Sondertag...</option>
+                        </select>
+                        <div id="currentSpecialDay" class="text-white/70 text-xs text-center min-h-[16px]"></div>
+                    </div>
+                </div>
+                
+                <button id="nextWeek" class="glass-effect p-3 rounded-full hover:scale-110 transition-all duration-300 group" title="Nächste Woche">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="glass-effect rounded-3xl p-8 hover-lift animate-slide-up overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full table-auto">
+                    <thead>
+                        <tr class="border-b border-white/20">
+                            <th class="px-6 py-4 text-left text-sm font-bold text-white/90 uppercase tracking-wider">
+                                Name
+                            </th>
+                            <th class="px-6 py-4 text-center text-sm font-bold text-white/90 uppercase tracking-wider" data-day="0">
+                                Montag
+                            </th>
+                            <th class="px-6 py-4 text-center text-sm font-bold text-white/90 uppercase tracking-wider" data-day="1">
+                                Dienstag
+                            </th>
+                            <th class="px-6 py-4 text-center text-sm font-bold text-white/90 uppercase tracking-wider" data-day="2">
+                                Mittwoch
+                            </th>
+                            <th class="px-6 py-4 text-center text-sm font-bold text-white/90 uppercase tracking-wider" data-day="3">
+                                Donnerstag
+                            </th>
+                            <th class="px-6 py-4 text-center text-sm font-bold text-white/90 uppercase tracking-wider" data-day="4">
+                                Freitag
+                            </th>
+                            <th class="px-6 py-4 text-center text-sm font-bold text-white/90 uppercase tracking-wider">
+                                Aktion
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="divide-y divide-white/10">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="floating-action">
+            <button id="exportExcelBtn" class="btn-success text-white px-8 py-4 rounded-full font-bold text-lg shadow-2xl hover-lift relative" title="Alle Anwesenheiten als Excel-Datei exportieren">
+                <div class="absolute inset-0 rounded-full pulse-ring bg-green-400 opacity-30"></div>
+                Export (Excel)
+            </button>
+        </div>
+    </div>
+
+    <div id="specialDaysModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-effect rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-fade-in">
+            <div class="p-8">
+                <div class="flex justify-between items-center mb-8">
+                    <div>
+                        <h2 class="text-3xl font-bold text-white mb-2">Sondertage verwalten</h2>
+                        <p class="text-white/70">Ferien und geschlossene Tage definieren</p>
+                    </div>
+                    <button id="closeModal" class="glass-effect p-3 rounded-xl hover:scale-110 transition-all duration-300" title="Schließen">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <form id="specialDayForm" class="mb-8 glass-effect rounded-2xl p-6">
+                    <h3 class="text-xl font-semibold mb-6 text-white flex items-center">
+                        Neuen Zeitraum hinzufügen
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-semibold text-white/90 mb-3">Name</label>
+                            <input type="text" id="specialDayName" required class="input-modern w-full px-4 py-3 rounded-xl border-0 text-gray-800 dark:text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-white/90 mb-3">Typ</label>
+                            <select id="specialDayType" class="input-modern w-full px-4 py-3 rounded-xl border-0 text-gray-800 dark:text-white">
+                                <option value="vacation">Ferien</option>
+                                <option value="closed">Geschlossen</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-white/90 mb-3">Startdatum</label>
+                            <input type="date" id="specialDayStart" required class="input-modern w-full px-4 py-3 rounded-xl border-0 text-gray-800 dark:text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-white/90 mb-3">Enddatum</label>
+                            <input type="date" id="specialDayEnd" required class="input-modern w-full px-4 py-3 rounded-xl border-0 text-gray-800 dark:text-white">
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 glass-effect rounded-xl p-4">
+                        <h4 class="text-sm font-semibold mb-4 text-white flex items-center">
+                            Zusätzlicher Feiertag (optional)
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-white/80 mb-2">Name</label>
+                                <input type="text" id="holidayName" placeholder="z.B. Ostermontag" class="input-modern w-full px-4 py-3 rounded-xl border-0 text-gray-800 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-white/80 mb-2">Datum</label>
+                                <input type="date" id="holidayDate" class="input-modern w-full px-4 py-3 rounded-xl border-0 text-gray-800 dark:text-white">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="mt-6 btn-primary text-white px-8 py-3 rounded-xl font-semibold hover-lift">
+                        Hinzufügen
+                    </button>
+                </form>
+
+                <div>
+                    <h3 class="text-xl font-semibold mb-6 text-white flex items-center">
+                        Bestehende Sondertage
+                    </h3>
+                    <div id="specialDaysList" class="space-y-3">
+                        </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="autosaveIndicator" class="glass-effect">Gespeichert!</div>
+
+    <div id="fileActionModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-effect rounded-3xl max-w-lg w-full animate-fade-in p-8 text-center">
+            <h2 class="text-3xl font-bold text-white mb-4">Planung starten</h2>
+            <p class="text-white/80 mb-8">
+                Möchtest du eine bestehende Planung laden oder eine neue, leere Planung anlegen?
+            </p>
+            <div class="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-4">
+                <button id="btnLoadExisting" class="btn-primary text-white px-6 py-3 rounded-xl font-semibold hover-lift w-full md:w-auto">
+                    Bestehende Planung laden
+                </button>
+                <button id="btnCreateNew" class="btn-secondary text-white px-6 py-3 rounded-xl font-semibold hover-lift w-full md:w-auto">
+                    Neue leere Planung erstellen
+                </button>
+            </div>
+            <button id="btnCancelFileAction" class="mt-6 text-white/70 hover:text-white transition-colors duration-300">
+                Abbrechen
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        class WeekPlanner {
+            constructor() {
+                this.currentWeek = new Date();
+                this.setToMonday(this.currentWeek);
+                
+                this.fileHandle = null;
+                this.saveTimeout = null;
+
+                this.currentClass = 'class1';
+                this.data = this.getInitialData();
+                this.specialDays = [];
+                
+                this.initializeTheme();
+                this.bindEvents();
+                this.render();
+                this.updateQuickNav();
+            }
+
+            get people() {
+                return this.data[this.currentClass].people;
+            }
+
+            get attendance() {
+                 return this.data[this.currentClass].attendance;
+            }
+
+            getInitialData() {
+                return {
+                    class1: { people: [], attendance: {} },
+                    class2: { people: [], attendance: {} },
+                    class3: { people: [], attendance: {} },
+                    class4: { people: [], attendance: {} },
+                };
+            }
+
+            setToMonday(date) {
+                const day = date.getDay();
+                const diff = day === 0 ? -6 : 1 - day;
+                date.setDate(date.getDate() + diff);
+                date.setHours(0, 0, 0, 0);
+            }
+
+            formatDate(date) {
+                const year = date.getFullYear();
+                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                const day = date.getDate().toString().padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+
+            formatDisplayDate(date) {
+                return date.toLocaleDateString('de-DE', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                });
+            }
+
+            getWeekDates() {
+                const dates = [];
+                for (let i = 0; i < 5; i++) {
+                    const date = new Date(this.currentWeek);
+                    date.setDate(this.currentWeek.getDate() + i);
+                    dates.push(date);
+                }
+                return dates;
+            }
+
+            initializeTheme() {
+                const savedTheme = localStorage.getItem('weekPlanner_theme');
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                const isDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
+                
+                document.documentElement.classList.toggle('dark', isDark);
+            }
+
+            autosave() {
+                clearTimeout(this.saveTimeout);
+                if (!this.fileHandle) return; 
+                this.saveTimeout = setTimeout(async () => {
+                    await this.saveDataToFile();
+                }, 1500);
+            }
+            
+            async saveDataToFile() {
+                if (!this.fileHandle) return;
+
+                const exportObject = {
+                    plannerData: this.data,
+                    specialDays: this.specialDays
+                };
+                const dataStr = JSON.stringify(exportObject, null, 2);
+
+                try {
+                    const writable = await this.fileHandle.createWritable();
+                    await writable.write(dataStr);
+                    await writable.close();
+                    this.showSaveIndicator();
+                } catch (err) {
+                    console.error("Fehler beim Speichern der Datei:", err);
+                }
+            }
+
+            showSaveIndicator() {
+                const indicator = document.getElementById('autosaveIndicator');
+                indicator.style.opacity = '1';
+                indicator.style.transform = 'translateX(-50%) translateY(0)';
+                setTimeout(() => {
+                    indicator.style.opacity = '0';
+                    indicator.style.transform = 'translateX(-50%) translateY(-50px)';
+                }, 2000);
+            }
+
+            async openFile() {
+                try {
+                    [this.fileHandle] = await window.showOpenFilePicker({
+                        types: [{
+                            description: 'Wochenplaner JSON-Datei',
+                            accept: { 'application/json': ['.json'] },
+                        }],
+                    });
+                    const file = await this.fileHandle.getFile();
+                    const content = await file.text();
+                    this.loadDataFromString(content);
+                } catch (err) {
+                    console.info("Datei-Öffnen vom Benutzer abgebrochen.", err);
+                }
+            }
+            
+            async createNewFile() {
+                try {
+                    this.fileHandle = await window.showSaveFilePicker({
+                        suggestedName: `wochenplaner_${this.formatDate(new Date())}.json`,
+                        types: [{
+                            description: 'Wochenplaner JSON-Datei',
+                            accept: { 'application/json': ['.json'] },
+                        }],
+                    });
+                    this.data = this.getInitialData();
+                    this.specialDays = [];
+                    this.render();
+                    this.updateQuickNav();
+                    await this.saveDataToFile();
+                } catch(err) {
+                    console.info("Datei-Erstellen vom Benutzer abgebrochen.", err);
+                }
+            }
+
+            loadDataFromString(jsonString) {
+                try {
+                    const imported = JSON.parse(jsonString);
+                    if (imported.plannerData && imported.specialDays) {
+                        this.data = imported.plannerData;
+                        this.specialDays = imported.specialDays;
+                        this.updateQuickNav();
+                        this.render();
+                    } else {
+                        alert("Dies ist keine gültige Wochenplaner-Datei.");
+                    }
+                } catch (error) {
+                    alert("Fehler beim Lesen der Datei.");
+                    console.error("Error parsing import file:", error);
+                }
+            }
+
+            bindEvents() {
+                document.getElementById('themeToggle').addEventListener('click', () => {
+                    const isDark = document.documentElement.classList.toggle('dark');
+                    localStorage.setItem('weekPlanner_theme', isDark ? 'dark' : 'light');
+                });
+                document.getElementById('prevWeek').addEventListener('click', () => {
+                    this.currentWeek.setDate(this.currentWeek.getDate() - 7);
+                    this.render();
+                });
+                document.getElementById('nextWeek').addEventListener('click', () => {
+                    this.currentWeek.setDate(this.currentWeek.getDate() + 7);
+                    this.render();
+                });
+                document.getElementById('classSelect').addEventListener('change', (e) => {
+                    this.currentClass = e.target.value;
+                    this.render();
+                });
+                document.getElementById('quickNav').addEventListener('change', (e) => {
+                    if (e.target.value) {
+                        const specialDay = this.specialDays.find(d => d.id === e.target.value);
+                        if (specialDay) {
+                            const [year, month, day] = specialDay.startDate.split('-').map(Number);
+                            this.currentWeek = new Date(year, month - 1, day);
+                            this.setToMonday(this.currentWeek);
+                            this.render();
+                        }
+                        e.target.value = '';
+                    }
+                });
+                document.getElementById('exportExcelBtn').addEventListener('click', () => this.exportToExcel());
+
+                document.getElementById('manageDaysBtn').addEventListener('click', () => this.showSpecialDaysModal());
+                document.getElementById('closeModal').addEventListener('click', () => this.hideSpecialDaysModal());
+                document.getElementById('specialDayForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.addSpecialDay();
+                });
+                document.getElementById('specialDaysModal').addEventListener('click', (e) => {
+                    if (e.target === e.currentTarget) this.hideSpecialDaysModal();
+                });
+                
+                // GEÄNDERT: Logik für das neue Dateiauswahl-Modal
+                const fileActionModal = document.getElementById('fileActionModal');
+
+                document.getElementById('openFileBtn').addEventListener('click', () => {
+                    fileActionModal.classList.remove('hidden');
+                });
+                
+                document.getElementById('btnLoadExisting').addEventListener('click', async () => {
+                    fileActionModal.classList.add('hidden');
+                    await this.openFile();
+                });
+
+                document.getElementById('btnCreateNew').addEventListener('click', async () => {
+                    fileActionModal.classList.add('hidden');
+                    await this.createNewFile();
+                });
+                
+                document.getElementById('btnCancelFileAction').addEventListener('click', () => {
+                    fileActionModal.classList.add('hidden');
+                });
+            }
+
+            render() {
+                this.renderWeekDisplay();
+                this.renderTable();
+                this.updateCurrentSpecialDayDisplay();
+            }
+
+            updateCurrentSpecialDayDisplay() {
+                const currentSpecialDayDiv = document.getElementById('currentSpecialDay');
+                const weekDates = this.getWeekDates();
+                
+                let currentSpecialDays = [];
+                
+                weekDates.forEach(date => {
+                    const dateStr = this.formatDate(date);
+                    const specialDayInfo = this.getSpecialDayInfo(dateStr);
+                    if (specialDayInfo) {
+                        currentSpecialDays.push(specialDayInfo);
+                    }
+                });
+
+                const vacationDays = currentSpecialDays.filter(d => d.type === 'vacation');
+                const displayDays = vacationDays.length > 0 ? vacationDays : currentSpecialDays;
+                
+                if (displayDays.length > 0) {
+                    const uniqueNames = [...new Set(displayDays.map(d => d.name))];
+                    const displayText = uniqueNames.join(', ');
+                    currentSpecialDayDiv.textContent = `Aktuelle Woche: ${displayText}`;
+                } else {
+                    currentSpecialDayDiv.textContent = '';
+                }
+            }
+
+            renderWeekDisplay() {
+                const weekDates = this.getWeekDates();
+                const start = this.formatDisplayDate(weekDates[0]);
+                const end = this.formatDisplayDate(weekDates[4]);
+                document.getElementById('weekDisplay').textContent = `${start} - ${end}`;
+
+                const headers = document.querySelectorAll('th[data-day]');
+                const dayNames = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag'];
+                
+                headers.forEach((header, index) => {
+                    const date = this.formatDisplayDate(weekDates[index]);
+                    header.innerHTML = `
+                        <div class="flex flex-col items-center">
+                            <span class="text-lg">${dayNames[index]}</span>
+                            <span class="text-xs font-normal text-white/60 mt-1">${date}</span>
+                        </div>
+                    `;
+                });
+            }
+
+            renderTable() {
+                const tbody = document.getElementById('tableBody');
+                tbody.innerHTML = '';
+
+                this.people.forEach((person, index) => {
+                    if (person.name.trim()) {
+                        tbody.appendChild(this.createRow(person, index, false));
+                    }
+                });
+
+                tbody.appendChild(this.createRow({ name: '', id: Date.now().toString() }, this.people.length, true));
+            }
+
+            createRow(person, index, isEmpty) {
+                const row = document.createElement('tr');
+                row.className = 'table-row';
+
+                const nameCell = document.createElement('td');
+                nameCell.className = 'px-6 py-4';
+                const nameInput = document.createElement('input');
+                nameInput.type = 'text';
+                nameInput.value = person.name;
+                nameInput.className = 'input-modern w-full bg-transparent border-none outline-none text-white placeholder-white/50 font-medium';
+                nameInput.placeholder = isEmpty ? 'Namen eingeben...' : '';
+                
+                const handleNewPerson = (nameValue) => {
+                    if (nameValue.trim() && !this.people.some(p => p.id === person.id)) {
+                        const newPerson = { name: nameValue.trim(), id: person.id };
+                        this.people.push(newPerson);
+                        this.autosave();
+                        this.render();
+                    }
+                };
+                
+                if (isEmpty) {
+                    nameInput.addEventListener('blur', (e) => handleNewPerson(e.target.value));
+                    nameInput.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            nameInput.blur();
+                        }
+                    });
+                } else {
+                    nameInput.addEventListener('blur', (e) => {
+                        if (this.people[index] && this.people[index].name !== e.target.value.trim()) {
+                            this.people[index].name = e.target.value.trim();
+                            this.autosave();
+                        }
+                    });
+                }
+                nameCell.appendChild(nameInput);
+                row.appendChild(nameCell);
+
+                const weekDates = this.getWeekDates();
+                weekDates.forEach((date) => {
+                    const dayCell = document.createElement('td');
+                    dayCell.className = 'px-6 py-4 text-center relative';
+                    
+                    const dateStr = this.formatDate(date);
+                    const specialDayInfo = this.getSpecialDayInfo(dateStr);
+
+                    if (!isEmpty) {
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.className = 'checkbox-custom';
+                        checkbox.disabled = !specialDayInfo || specialDayInfo.type !== 'vacation';
+                        
+                        const attendanceKey = `${person.id}_${dateStr}`;
+                        checkbox.checked = this.attendance[attendanceKey] || false;
+                        
+                        checkbox.addEventListener('change', (e) => {
+                            this.attendance[attendanceKey] = e.target.checked;
+                            this.autosave();
+                        });
+                        dayCell.appendChild(checkbox);
+                    }
+                    row.appendChild(dayCell);
+                });
+
+                const actionCell = document.createElement('td');
+                actionCell.className = 'px-6 py-4 text-center';
+                if (!isEmpty) {
+                    const actionWrapper = document.createElement('div');
+                    actionWrapper.className = 'flex items-center justify-center space-x-2';
+
+                    const selectAllBtn = document.createElement('button');
+                    selectAllBtn.className = 'btn-primary text-white p-2 rounded-lg hover-lift';
+                    selectAllBtn.title = "Alle Ferientage dieser Woche für diese Person auswählen";
+                    selectAllBtn.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                    selectAllBtn.addEventListener('click', () => this.selectAllAvailable(person.id));
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'btn-danger text-white p-2 rounded-lg hover-lift';
+                    deleteBtn.title = "Diese Person aus der Liste entfernen";
+                    deleteBtn.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>`;
+                    deleteBtn.addEventListener('click', () => this.deletePerson(index));
+                    
+                    actionWrapper.appendChild(selectAllBtn);
+                    actionWrapper.appendChild(deleteBtn);
+                    actionCell.appendChild(actionWrapper);
+                }
+                row.appendChild(actionCell);
+                return row;
+            }
+
+            selectAllAvailable(personId) {
+                const weekDates = this.getWeekDates();
+                weekDates.forEach(date => {
+                    const dateStr = this.formatDate(date);
+                    const specialDayInfo = this.getSpecialDayInfo(dateStr);
+                    if (specialDayInfo && specialDayInfo.type === 'vacation') {
+                        const attendanceKey = `${personId}_${dateStr}`;
+                        this.attendance[attendanceKey] = true;
+                    }
+                });
+                this.autosave();
+                this.render();
+            }
+
+            deletePerson(index) {
+                const person = this.people[index];
+                if (person && confirm(`Möchten Sie "${person.name}" wirklich endgültig löschen?`)) {
+                    this.people.splice(index, 1);
+                    Object.keys(this.attendance).forEach(key => {
+                        if (key.startsWith(person.id + '_')) {
+                            delete this.attendance[key];
+                        }
+                    });
+                    this.autosave();
+                    this.render();
+                }
+            }
+            
+            getSpecialDayInfo(dateStr) {
+                try {
+                    if(!this.specialDays) return null;
+                    for (const specialDay of this.specialDays) {
+                        if (specialDay.holidayDate && dateStr === specialDay.holidayDate) {
+                            return { type: 'closed', name: specialDay.holidayName };
+                        }
+                    }
+
+                    const [year, month, day] = dateStr.split('-').map(Number);
+                    const date = new Date(year, month - 1, day);
+
+                    for (const specialDay of this.specialDays) {
+                        if (!specialDay.startDate || !specialDay.endDate) continue;
+                        
+                        const [startYear, startMonth, startDay] = specialDay.startDate.split('-').map(Number);
+                        const start = new Date(startYear, startMonth - 1, startDay);
+
+                        const [endYear, endMonth, endDay] = specialDay.endDate.split('-').map(Number);
+                        const end = new Date(endYear, endMonth - 1, endDay);
+
+                        if (isNaN(start.getTime()) || isNaN(end.getTime())) continue;
+                        
+                        if (date >= start && date <= end) {
+                            return { type: specialDay.type, name: specialDay.name };
+                        }
+                    }
+                    return null;
+                } catch (error) {
+                    console.error("Fehler in getSpecialDayInfo:", error);
+                    return null;
+                }
+            }
+
+            showSpecialDaysModal() {
+                document.getElementById('specialDaysModal').classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+                this.renderSpecialDaysList();
+            }
+
+            hideSpecialDaysModal() {
+                document.getElementById('specialDaysModal').classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }
+
+            addSpecialDay() {
+                const name = document.getElementById('specialDayName').value.trim();
+                const type = document.getElementById('specialDayType').value;
+                const startDate = document.getElementById('specialDayStart').value;
+                const endDate = document.getElementById('specialDayEnd').value;
+                const holidayName = document.getElementById('holidayName').value.trim();
+                const holidayDate = document.getElementById('holidayDate').value;
+
+                if (!name || !startDate || !endDate) return;
+
+                const specialDay = {
+                    id: Date.now().toString(),
+                    name, type, startDate, endDate
+                };
+                if (holidayName && holidayDate) {
+                    specialDay.holidayName = holidayName;
+                    specialDay.holidayDate = holidayDate;
+                }
+                this.specialDays.push(specialDay);
+                this.autosave();
+                document.getElementById('specialDayForm').reset();
+                this.renderSpecialDaysList();
+                this.updateQuickNav();
+                this.render();
+            }
+
+            renderSpecialDaysList() {
+                const container = document.getElementById('specialDaysList');
+                container.innerHTML = '';
+                if (!this.specialDays || this.specialDays.length === 0) {
+                    container.innerHTML = '<p class="text-white/70">Keine Sondertage definiert.</p>';
+                    return;
+                }
+                this.specialDays.sort((a,b) => new Date(a.startDate) - new Date(b.startDate));
+                this.specialDays.forEach(specialDay => {
+                    const item = document.createElement('div');
+                    item.className = 'glass-effect rounded-xl p-4 hover-lift animate-slide-up';
+                    const info = document.createElement('div');
+                    info.className = 'flex justify-between items-center';
+                    const details = document.createElement('div');
+                    const typeColor = specialDay.type === 'closed' ? 'text-red-300' : 'text-yellow-300';
+                    
+                    try {
+                        const [startY, startM, startD] = specialDay.startDate.split('-').map(Number);
+                        const startDateObj = new Date(startY, startM - 1, startD);
+                        const [endY, endM, endD] = specialDay.endDate.split('-').map(Number);
+                        const endDateObj = new Date(endY, endM - 1, endD);
+
+                        let holidayStr = '';
+                        if (specialDay.holidayName && specialDay.holidayDate) {
+                            const [holY, holM, holD] = specialDay.holidayDate.split('-').map(Number);
+                            const holidayDateObj = new Date(holY, holM - 1, holD);
+                            holidayStr = `<div class="text-sm text-red-300 mt-1">${specialDay.holidayName} (${this.formatDisplayDate(holidayDateObj)})</div>`;
+                        }
+                        
+                        details.innerHTML = `
+                            <div class="font-semibold text-white text-lg">${specialDay.name}</div>
+                            <div class="text-sm text-white/80 mt-1">
+                                ${this.formatDisplayDate(startDateObj)} - ${this.formatDisplayDate(endDateObj)}
+                                <span class="${typeColor} font-medium">(${specialDay.type === 'closed' ? 'Geschlossen' : 'Ferien'})</span>
+                            </div>
+                            ${holidayStr}
+                        `;
+                    } catch (e) {
+                        details.innerHTML = `<div class="font-semibold text-red-400">Fehlerhafter Eintrag: ${specialDay.name || 'Unbenannt'}</div>`;
+                    }
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'btn-danger text-white p-2 rounded-lg hover-lift ml-4';
+                    deleteBtn.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>`;
+                    deleteBtn.addEventListener('click', () => this.deleteSpecialDay(specialDay.id));
+                    info.appendChild(details);
+                    info.appendChild(deleteBtn);
+                    item.appendChild(info);
+                    container.appendChild(item);
+                });
+            }
+
+            deleteSpecialDay(id) {
+                this.specialDays = this.specialDays.filter(d => d.id !== id);
+                this.autosave();
+                this.renderSpecialDaysList();
+                this.updateQuickNav();
+                this.render();
+            }
+
+            updateQuickNav() {
+                const select = document.getElementById('quickNav');
+                select.innerHTML = '<option value="">Springe zu Sondertag...</option>';
+                 if (!this.specialDays) return;
+                this.specialDays.sort((a,b) => new Date(a.startDate) - new Date(b.startDate));
+                this.specialDays.forEach(specialDay => {
+                    if(!specialDay.startDate) return;
+                    const option = document.createElement('option');
+                    option.value = specialDay.id;
+                    const [startY, startM, startD] = specialDay.startDate.split('-').map(Number);
+                    const startDateObj = new Date(startY, startM - 1, startD);
+                    option.textContent = `${specialDay.name} (${this.formatDisplayDate(startDateObj)})`;
+                    select.appendChild(option);
+                });
+            }
+
+            exportToExcel() {
+                const allAttendances = [];
+                Object.keys(this.data).forEach(classKey => {
+                    const classData = this.data[classKey];
+                    const className = `Klasse ${classKey.replace('class', '')}`;
+                    
+                    classData.people.forEach(person => {
+                        if (!person.name.trim()) return;
+                        
+                        Object.keys(classData.attendance).forEach(key => {
+                            if (key.startsWith(person.id + '_') && classData.attendance[key]) {
+                                const dateStr = key.split('_')[1];
+                                const [year, month, day] = dateStr.split('-').map(Number);
+                                allAttendances.push({
+                                    className,
+                                    personName: person.name,
+                                    date: new Date(year, month - 1, day)
+                                });
+                            }
+                        });
+                    });
+                });
+                
+                if (allAttendances.length === 0) {
+                    alert("Keine Anwesenheitsdaten zum Exportieren vorhanden.");
+                    return;
+                }
+                
+                const defaultFileName = `Anwesenheit_Export_${this.formatDate(new Date())}.xlsx`;
+                let userFileName = prompt("Wie soll die Excel-Datei heißen?", defaultFileName);
+
+                if (!userFileName) {
+                    console.log("Excel-Export vom Benutzer abgebrochen.");
+                    return; 
+                }
+
+                if (!userFileName.toLowerCase().endsWith('.xlsx')) {
+                    userFileName += '.xlsx';
+                }
+
+                const rawDataSheet = this.prepareRawDataSheet(allAttendances);
+                const { countSheet, weeklyNameSheets } = this.prepareWeeklySheets(allAttendances);
+
+                const wb = XLSX.utils.book_new();
+                const wsRaw = XLSX.utils.aoa_to_sheet(rawDataSheet);
+                const wsCount = XLSX.utils.aoa_to_sheet(countSheet);
+
+                XLSX.utils.book_append_sheet(wb, wsRaw, 'Rohdaten');
+                XLSX.utils.book_append_sheet(wb, wsCount, 'Anzahl pro Woche');
+
+                Object.keys(weeklyNameSheets).forEach(sheetName => {
+                    const ws = XLSX.utils.aoa_to_sheet(weeklyNameSheets[sheetName]);
+                    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+                });
+
+                XLSX.writeFile(wb, userFileName);
+            }
+            
+            prepareRawDataSheet(attendances) {
+                const sheetData = [['Klasse', 'Vorname', 'Nachname', 'Datum']];
+                attendances.forEach(att => {
+                    const nameParts = att.personName.trim().split(' ').filter(p => p);
+                    let firstName = nameParts.join(' ');
+                    let lastName = '';
+
+                    if (nameParts.length > 1) {
+                        lastName = nameParts.pop();
+                        firstName = nameParts.join(' ');
+                    }
+                    
+                    sheetData.push([
+                        att.className,
+                        firstName,
+                        lastName,
+                        this.formatDisplayDate(att.date)
+                    ]);
+                });
+                return sheetData;
+            }
+
+            prepareWeeklySheets(attendances) {
+                const weeklyData = {};
+                attendances.forEach(att => {
+                    const dayOfWeek = att.date.getDay();
+                    if (dayOfWeek === 0 || dayOfWeek === 6) return;
+
+                    const monday = new Date(att.date);
+                    this.setToMonday(monday);
+                    const mondayStr = this.formatDate(monday);
+
+                    if (!weeklyData[mondayStr]) {
+                        weeklyData[mondayStr] = { 0:[], 1:[], 2:[], 3:[], 4:[] };
+                    }
+                    weeklyData[mondayStr][dayOfWeek - 1].push(att.personName);
+                });
+                
+                const countSheet = [['Woche', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Gesamt']];
+                const weeklyNameSheets = {};
+                
+                const sortedWeeks = Object.keys(weeklyData).sort();
+
+                sortedWeeks.forEach(mondayStr => {
+                    const week = weeklyData[mondayStr];
+                    const [year, month, day] = mondayStr.split('-').map(Number);
+                    const weekStart = new Date(year, month - 1, day);
+                    const kw = this.getWeekNumber(weekStart);
+                    const weekLabel = `KW${kw} (${this.formatDisplayDate(weekStart)})`;
+                    
+                    const counts = [week[0].length, week[1].length, week[2].length, week[3].length, week[4].length];
+                    const total = counts.reduce((a, b) => a + b, 0);
+                    countSheet.push([weekLabel, ...counts, total]);
+
+                    const sheetName = `KW${kw} (${this.formatDisplayDate(weekStart).slice(0,5)})`.replace(/[\\/?*[\]]/g, '');
+                    const nameSheetHeader = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag'];
+                    const maxRows = Math.max(...Object.values(week).map(d => d.length));
+                    const nameSheetData = [nameSheetHeader];
+
+                    for (let i = 0; i < maxRows; i++) {
+                        const row = [
+                            week[0][i] || '',
+                            week[1][i] || '',
+                            week[2][i] || '',
+                            week[3][i] || '',
+                            week[4][i] || ''
+                        ];
+                        nameSheetData.push(row);
+                    }
+                    weeklyNameSheets[sheetName] = nameSheetData;
+                });
+                
+                return { countSheet, weeklyNameSheets };
+            }
+
+            getWeekNumber(d) {
+                d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+                d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+                var yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+                var weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+                return weekNo;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            new WeekPlanner();
+        });
+    </script>
+</body>
+</html>
