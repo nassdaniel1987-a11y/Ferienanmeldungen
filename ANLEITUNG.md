@@ -58,7 +58,7 @@ Die Anwendung unterstützt 4 Klassen:
 
 - **◄ (Pfeil links):** Vorherige Woche anzeigen
 - **► (Pfeil rechts):** Nächste Woche anzeigen
-- **Schnellnavigation:** Springe direkt zu einem Sondertag über das Dropdown-Menü
+- **Schnellnavigation:** Springe direkt zu einer Ferienzeit über das Dropdown-Menü
 
 ---
 
@@ -106,11 +106,11 @@ Die Anwendung unterstützt 4 Klassen:
 
 ---
 
-## 📅 Sondertage verwalten (Ferien/Feiertage)
+## 📅 Ferien verwalten
 
-### Sondertage-Dialog öffnen
+### Ferien-Dialog öffnen
 
-Klicke auf **"Sondertage"** im Header
+Klicke auf **"Ferien"** im Header
 
 ### Ferienzeit hinzufügen
 
@@ -132,11 +132,11 @@ Klicke auf **"Sondertage"** im Header
   - Name: Ostermontag
   - Datum: 21.04.2025
 
-### Sondertag löschen
+### Ferienzeit löschen
 
-1. Öffne den Sondertage-Dialog
+1. Öffne den Ferien-Dialog
 2. Klicke auf das **Papierkorb-Symbol** (🗑️) neben dem Eintrag
-3. Der Sondertag wird gelöscht
+3. Die Ferienzeit wird gelöscht
 
 ---
 
@@ -225,7 +225,7 @@ Die Einstellung wird im Browser gespeichert.
 - **Ursache:** Möglicherweise wurde die Datei gelöscht oder verschoben
 
 **Problem:** Checkboxen sind ausgegraut
-- **Lösung:** Definiere Ferientage über "Sondertage"
+- **Lösung:** Definiere Ferientage über "Ferien"
 - **Ursache:** Checkboxen sind nur an Ferientagen aktiviert
 
 **Problem:** Drag & Drop funktioniert nicht
@@ -246,7 +246,7 @@ Die Einstellung wird im Browser gespeichert.
 2. **Datei erstellen:** "Neue leere Planung erstellen" → `herbstferien_2025.json`
 3. **Klasse wählen:** "Klasse 3" im Dropdown auswählen
 4. **Ferien definieren:**
-   - "Sondertage" öffnen
+   - "Ferien" öffnen
    - Name: "Herbstferien 2025"
    - Typ: "Ferien"
    - Datum: 06.10.2025 - 17.10.2025
